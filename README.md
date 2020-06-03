@@ -1,8 +1,6 @@
 pdbutil.py
 ===
 
-Overview
-
 A simple module for handling protein backbone coordinates.
 
 ## Requirement
