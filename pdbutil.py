@@ -76,6 +76,7 @@ class ProteinBackbone:
             self.exists = copyfrom.exists
             self.resname = copyfrom.resname
             self.iaa2org = copyfrom.iaa2org
+            self.dihedral = copyfrom.dihedral
         elif length > 0:
             self.naa = length
             self.coord = np.zeros((self.naa, len(self.atom2id), 3), dtype=np.float)
