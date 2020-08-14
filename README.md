@@ -9,7 +9,7 @@ A simple module for handling protein backbone coordinates.
 
 ## Usage
 ```
-from pdbutil.py import ProteinBackbone as pbb
+from pdbutil import ProteinBackbone as pbb
 ```
 
 ## Author
