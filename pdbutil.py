@@ -260,12 +260,13 @@ class ProteinBackbone:
             for iatom in range(len(self.id2atom)):
                 if(self.exists[iaa][iatom] == False): continue
                 icount += 1
-                file.write("ATOM%7d  %-3s %3s %s%4d    %8.3f%8.3f%8.3f\n"
+                file.write("ATOM%7d  %-3s %3s %s%4d    %8.3f%8.3f%8.3f  %4.2f%6.2f\n"
                            % (icount, self.id2atom[iatom], self.resname[iaa],
                               chain, resnum,
                               self.coord[iaa][iatom][0],
                               self.coord[iaa][iatom][1],
-                              self.coord[iaa][iatom][2]))
+                              self.coord[iaa][iatom][2],
+                              1.0, 100.0))
 
     ## read pdb file ##
     def readpdb(self, file):
