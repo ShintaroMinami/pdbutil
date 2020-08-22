@@ -313,9 +313,6 @@ def zmat2xyz(bond, angle, dihedral, one, two , three):
     oldvec[2] = bond * np.cos(angle)
     mat = viewat(three, two, one)
     newvec = np.dot(mat, oldvec)
-    #for i in range(4):
-        #for j in range(4):
-#            newvec[i] += mat[i][j] * oldvec[j]
     # return
     return newvec
 
