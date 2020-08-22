@@ -69,14 +69,15 @@ class ProteinBackbone:
         if file is not None:
             self.file = file
             self.readpdb(self.file)
+            self.calc_dihedral()
             self.addO()
         elif copyfrom is not None:
             self.naa = copyfrom.naa
-            self.coord = copyfrom.coord
-            self.exists = copyfrom.exists
-            self.resname = copyfrom.resname
-            self.iaa2org = copyfrom.iaa2org
-            self.dihedral = copyfrom.dihedral
+            self.coord = copyfrom.coord.copy()
+            self.exists = copyfrom.exists.copy()
+            self.resname = copyfrom.resname.copy()
+            self.iaa2org = copyfrom.iaa2org.copy()
+            self.dihedral = copyfrom.dihedral.copy()
         elif length > 0:
             self.naa = length
             self.coord = np.zeros((self.naa, len(self.atom2id), 3), dtype=np.float)
@@ -85,6 +86,7 @@ class ProteinBackbone:
             self.exists[:,self.atom2id['H']] = False
             self.resname = ['NON']*self.naa
             self.iaa2org = ['A0000']*self.naa
+            self.dihedral = np.zeros((self.naa, 3), dtype=np.float)
 
     def __getitem__(self, ids):
         return self.coord[ids]
@@ -310,10 +312,10 @@ def zmat2xyz(bond, angle, dihedral, one, two , three):
     oldvec[1] = bond * np.sin(angle) * np.cos(dihedral)
     oldvec[2] = bond * np.cos(angle)
     mat = viewat(three, two, one)
-    newvec = np.zeros(4, dtype=np.float)
-    for i in range(4):
-        for j in range(4):
-            newvec[i] += mat[i][j] * oldvec[j]
+    newvec = np.dot(mat, oldvec)
+    #for i in range(4):
+        #for j in range(4):
+#            newvec[i] += mat[i][j] * oldvec[j]
     # return
     return newvec
 
