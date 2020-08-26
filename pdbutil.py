@@ -63,7 +63,7 @@ class ProteinBackbone:
         length : int
             Number of residues.
         calc_dihedral : bool
-            with calculation dihedral angles
+            with calculating dihedral angles
         check_chainbreak : bool
             with checking chainbreak
         """
