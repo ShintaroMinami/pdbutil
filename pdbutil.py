@@ -46,9 +46,13 @@ class ProteinBackbone:
         Dihedral angles (phi, psi, omega).
     distmat : numpy float matrix (naa, naa)
         Distance matrix.
+    chainbreak : numpy bool vector (naa)
+        Existence of chainbreak
+    seglist : list of tuples (start_aa, end_aa)
+        List of continuous segments
     """
 
-    def __init__(self, length=0, file=None, copyfrom=None):
+    def __init__(self, length=0, file=None, copyfrom=None, calc_dihedral=True, check_chainbreak=True):
         """
         Parameters
         ----------
@@ -58,6 +62,10 @@ class ProteinBackbone:
             Original instance to be copied.
         length : int
             Number of residues.
+        calc_dihedral : bool
+            with calculation dihedral angles
+        check_chainbreak : bool
+            with checking chainbreak
         """
         self.atom2id = {'N':0, 'CA':1, 'C':2, 'O':3, 'CB':4, 'H':5}
         self.id2atom = ['N', 'CA', 'C', 'O', 'CB', 'H']
@@ -65,12 +73,15 @@ class ProteinBackbone:
                       'angle_C_N_H':np.deg2rad(123.0), 'angle_N_C_O':np.deg2rad(122.7),
                        'dhdrl_C_N_CA_CB':np.deg2rad(-124.4), 'dhdrl_N_C_CA_CB':np.deg2rad(121.5),
                        'dhdrl_CA_C_N_H':np.deg2rad(0.0), 'dhdrl_CA_N_C_O':np.deg2rad(0.0),
+                       'length_CN':1.33, 'length_NCA':1.46, 'length_CAC':1.52,
                        'length_CC':1.54, 'length_CO':1.24, 'length_NH':1.00}
+        self.chainbreak = []
+        self.seglist = []
         if file is not None:
             self.file = file
             self.readpdb(self.file)
-            self.calc_dihedral()
-            self.addO()
+            if calc_dihedral == True: self.calc_dihedral()
+            if check_chainbreak == True: self.seglist = self.check_chainbreak()
         elif copyfrom is not None:
             self.naa = copyfrom.naa
             self.coord = copyfrom.coord.copy()
@@ -96,26 +107,6 @@ class ProteinBackbone:
 
     def __len__(self):
         return self.naa
-
-    ## calc dihedral angle ##
-    def calc_dihedral(self):
-        self.dihedral = np.zeros((self.naa, 3), dtype=np.float)
-        for iaa in range(self.naa):
-            if (iaa > 0) and (self.exists[iaa-1][self.atom2id['C']] == True):
-                self.dihedral[iaa][0] = xyz2dihedral(self.coord[iaa-1][self.atom2id['C']],
-                                                     self.coord[iaa][self.atom2id['N']],
-                                                     self.coord[iaa][self.atom2id['CA']],
-                                                     self.coord[iaa][self.atom2id['C']])
-            if (iaa < self.naa-1) and (self.exists[iaa+1][self.atom2id['N']] == True):
-                self.dihedral[iaa][1] = xyz2dihedral(self.coord[iaa][self.atom2id['N']],
-                                                     self.coord[iaa][self.atom2id['CA']],
-                                                     self.coord[iaa][self.atom2id['C']],
-                                                     self.coord[iaa+1][self.atom2id['N']])
-            if (iaa < self.naa-1) and (self.exists[iaa+1][self.atom2id['CA']] == True):
-                self.dihedral[iaa][2] = xyz2dihedral(self.coord[iaa][self.atom2id['CA']],
-                                                     self.coord[iaa][self.atom2id['C']],
-                                                     self.coord[iaa+1][self.atom2id['N']],
-                                                     self.coord[iaa+1][self.atom2id['CA']])
 
     ## delete residues ##
     def delete(self, position, length):
@@ -223,6 +214,45 @@ class ProteinBackbone:
             self.coord[iaa][self.atom2id['CB']][1] = cb[1]
             self.coord[iaa][self.atom2id['CB']][2] = cb[2]
             self.exists[iaa][self.atom2id['CB']] = True
+
+    ## check chain break ##
+    def check_chainbreak(self):
+        self.chainbreak = [False] * self.naa
+        ini = 0
+        for iaa in range(self.naa):
+            cn = np.sqrt(((self.coord[iaa-1][self.atom2id['C']] - self.coord[iaa][self.atom2id['N']])**2).sum()) if iaa!=0 else self.param['length_CN']
+            nca = np.sqrt(((self.coord[iaa][self.atom2id['N']] - self.coord[iaa][self.atom2id['CA']])**2).sum())
+            cac = np.sqrt(((self.coord[iaa][self.atom2id['CA']] - self.coord[iaa][self.atom2id['C']])**2).sum())
+            (break_cn, break_nca, break_cac) = (False, False, False)
+            if cn < self.param['length_CN']/1.25 or self.param['length_CN']*1.25 < cn: (self.chainbreak[iaa], break_cn) = (True, True)
+            if nca < self.param['length_NCA']/1.25 or self.param['length_NCA']*1.25 < nca: (self.chainbreak[iaa], break_nca) = (True, True)
+            if cac < self.param['length_CAC']/1.25 or self.param['length_CAC']*1.25 < cac: (self.chainbreak[iaa], break_cac) = (True, True)
+            if self.chainbreak[iaa] == True:
+                if ini < iaa:
+                    self.seglist.append((ini, iaa-1))
+                ini = iaa if (break_cn, break_nca, break_cac) == (True, False, False) else iaa+1
+        if ini < iaa: self.seglist.append((ini, iaa))
+        return self.seglist
+
+    ## calc dihedral angle ##
+    def calc_dihedral(self):
+        self.dihedral = np.zeros((self.naa, 3), dtype=np.float)
+        for iaa in range(self.naa):
+            if (iaa > 0) and (self.exists[iaa-1][self.atom2id['C']] == True):
+                self.dihedral[iaa][0] = xyz2dihedral(self.coord[iaa-1][self.atom2id['C']],
+                                                     self.coord[iaa][self.atom2id['N']],
+                                                     self.coord[iaa][self.atom2id['CA']],
+                                                     self.coord[iaa][self.atom2id['C']])
+            if (iaa < self.naa-1) and (self.exists[iaa+1][self.atom2id['N']] == True):
+                self.dihedral[iaa][1] = xyz2dihedral(self.coord[iaa][self.atom2id['N']],
+                                                     self.coord[iaa][self.atom2id['CA']],
+                                                     self.coord[iaa][self.atom2id['C']],
+                                                     self.coord[iaa+1][self.atom2id['N']])
+            if (iaa < self.naa-1) and (self.exists[iaa+1][self.atom2id['CA']] == True):
+                self.dihedral[iaa][2] = xyz2dihedral(self.coord[iaa][self.atom2id['CA']],
+                                                     self.coord[iaa][self.atom2id['C']],
+                                                     self.coord[iaa+1][self.atom2id['N']],
+                                                     self.coord[iaa+1][self.atom2id['CA']])
 
     ## distance matrix ##
     def calc_distmat(self, atomtype='CA'):
@@ -352,8 +382,8 @@ def xyz2dihedral(p1, p2, p3, p4):
     perp234 /= np.linalg.norm(perp234)
     # scalar product #
     scp = np.dot(perp123, perp234)
-    scp = scp - eps if (1-eps < scp < 1+eps) else scp
-    scp = scp + eps if (-1-eps < scp < -1+eps) else scp
+    scp = scp - eps if scp > 1 else scp
+    scp = scp + eps if scp < -1 else scp
     # absolute angle #
     angle = np.rad2deg( np.arccos(scp) )
     # return #
