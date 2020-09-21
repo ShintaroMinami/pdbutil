@@ -230,28 +230,30 @@ class ProteinBackbone:
             self.coord[iaa][self.atom2id['H']][2] = nh[2]
             self.exists[iaa][self.atom2id['H']] = True
 
-    def addHA(self):
+    def addHA(self, force=False):
         for iaa in range(len(self.coord)):
-            ha1 = zmat2xyz(self.param['length_CH'],
-                           self.param['angle_N_CA_1HA'],
-                           self.param['dhdrl_C_N_CA_1HA'],
-                           self.coord[iaa][self.atom2id['C']],
-                           self.coord[iaa][self.atom2id['N']],
-                           self.coord[iaa][self.atom2id['CA']])
-            ha2 = zmat2xyz(self.param['length_CH'],
-                           self.param['angle_N_CA_2HA'],
-                           self.param['dhdrl_C_N_CA_2HA'],
-                           self.coord[iaa][self.atom2id['C']],
-                           self.coord[iaa][self.atom2id['N']],
-                           self.coord[iaa][self.atom2id['CA']])
-            self.coord[iaa][self.atom2id['1HA']][0] = ha1[0]
-            self.coord[iaa][self.atom2id['1HA']][1] = ha1[1]
-            self.coord[iaa][self.atom2id['1HA']][2] = ha1[2]
-            self.exists[iaa][self.atom2id['1HA']] = True
-            self.coord[iaa][self.atom2id['2HA']][0] = ha2[0]
-            self.coord[iaa][self.atom2id['2HA']][1] = ha2[1]
-            self.coord[iaa][self.atom2id['2HA']][2] = ha2[2]
-            self.exists[iaa][self.atom2id['2HA']] = True
+            if ((self.exists[iaa][self.atom2id['1HA']] == False) or (force==True)):
+                ha1 = zmat2xyz(self.param['length_CH'],
+                                self.param['angle_N_CA_1HA'],
+                                self.param['dhdrl_C_N_CA_1HA'],
+                                self.coord[iaa][self.atom2id['C']],
+                                self.coord[iaa][self.atom2id['N']],
+                                self.coord[iaa][self.atom2id['CA']])
+                self.coord[iaa][self.atom2id['1HA']][0] = ha1[0]
+                self.coord[iaa][self.atom2id['1HA']][1] = ha1[1]
+                self.coord[iaa][self.atom2id['1HA']][2] = ha1[2]
+                self.exists[iaa][self.atom2id['1HA']] = True
+            if ((self.exists[iaa][self.atom2id['2HA']] == False) or (force==True)):
+                ha2 = zmat2xyz(self.param['length_CH'],
+                                self.param['angle_N_CA_2HA'],
+                                self.param['dhdrl_C_N_CA_2HA'],
+                                self.coord[iaa][self.atom2id['C']],
+                                self.coord[iaa][self.atom2id['N']],
+                                self.coord[iaa][self.atom2id['CA']])
+                self.coord[iaa][self.atom2id['2HA']][0] = ha2[0]
+                self.coord[iaa][self.atom2id['2HA']][1] = ha2[1]
+                self.coord[iaa][self.atom2id['2HA']][2] = ha2[2]
+                self.exists[iaa][self.atom2id['2HA']] = True
 
     ## check chain break ##
     def check_chainbreak(self):
