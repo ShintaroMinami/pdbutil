@@ -67,14 +67,16 @@ class ProteinBackbone:
         check_chainbreak : bool
             with checking chainbreak
         """
-        self.atom2id = {'N':0, 'CA':1, 'C':2, 'O':3, 'CB':4, 'H':5}
-        self.id2atom = ['N', 'CA', 'C', 'O', 'CB', 'H']
+        self.atom2id = {'N':0, 'CA':1, 'C':2, 'O':3, 'CB':4, 'H':5, '1HA':6, '2HA':7}
+        self.id2atom = ['N', 'CA', 'C', 'O', 'CB', 'H', '1HA', '2HA']
         self.param = {'angle_N_CA_CB':np.deg2rad(110.6), 'angle_CB_CA_C':np.deg2rad(110.6),
-                      'angle_C_N_H':np.deg2rad(123.0), 'angle_N_C_O':np.deg2rad(122.7),
-                       'dhdrl_C_N_CA_CB':np.deg2rad(-124.4), 'dhdrl_N_C_CA_CB':np.deg2rad(121.5),
-                       'dhdrl_CA_C_N_H':np.deg2rad(0.0), 'dhdrl_CA_N_C_O':np.deg2rad(0.0),
-                       'length_CN':1.33, 'length_NCA':1.46, 'length_CAC':1.52,
-                       'length_CC':1.54, 'length_CO':1.24, 'length_NH':1.00}
+                        'angle_C_N_H':np.deg2rad(123.0), 'angle_N_C_O':np.deg2rad(122.7),
+                        'angle_N_CA_1HA':np.deg2rad(109.5), 'angle_N_CA_2HA':np.deg2rad(109.5),
+                        'dhdrl_C_N_CA_CB':np.deg2rad(-121.4), 'dhdrl_N_C_CA_CB':np.deg2rad(121.4),
+                        'dhdrl_CA_C_N_H':np.deg2rad(0.0), 'dhdrl_CA_N_C_O':np.deg2rad(0.0),
+                        'dhdrl_C_N_CA_1HA':np.deg2rad(121.4), 'dhdrl_C_N_CA_2HA':np.deg2rad(-121.4),
+                        'length_CN':1.33, 'length_NCA':1.46, 'length_CAC':1.52,
+                        'length_CC':1.54, 'length_CO':1.24, 'length_NH':1.01, 'length_CH':1.09}
         self.chainbreak = []
         self.seglist = []
         if file is not None:
@@ -89,12 +91,16 @@ class ProteinBackbone:
             self.resname = copyfrom.resname.copy()
             self.iaa2org = copyfrom.iaa2org.copy()
             self.dihedral = copyfrom.dihedral.copy()
+            self.chainbreak = copyfrom.chainbreak.copy()
+            self.seglist = copyfrom.seglist.copy()
         elif length > 0:
             self.naa = length
             self.coord = np.zeros((self.naa, len(self.atom2id), 3), dtype=np.float)
             self.exists = np.ones((self.naa, len(self.atom2id)), dtype=np.bool)
             self.exists[:,self.atom2id['CB']] = False
             self.exists[:,self.atom2id['H']] = False
+            self.exists[:,self.atom2id['1HA']] = False
+            self.exists[:,self.atom2id['2HA']] = False
             self.resname = ['NON']*self.naa
             self.iaa2org = ['A0000']*self.naa
             self.dihedral = np.zeros((self.naa, 3), dtype=np.float)
@@ -128,9 +134,11 @@ class ProteinBackbone:
             self.resname[iaa_new] = resname_org[iaa]
             self.iaa2org[iaa_new] = iaa2org_org[iaa]
             iaa_new += 1
+        self.calc_dihedral()
+        self.seglist = self.check_chainbreak()
 
     ## insert blank residues ##
-    def insert_blank(self, position, length, chain='A', resname='INS'):
+    def insert_blank(self, position, length, chain='A', resname='INS', calc_dihedral=True, check_chainbreak=True):
         naa_org = self.naa
         coord_org = self.coord
         exists_org = self.exists
@@ -141,6 +149,8 @@ class ProteinBackbone:
         self.exists = np.ones((self.naa, len(self.atom2id)), dtype=np.bool)
         self.exists[:,self.atom2id['CB']] = False
         self.exists[:,self.atom2id['H']] = False
+        self.exists[:,self.atom2id['1HA']] = False
+        self.exists[:,self.atom2id['2HA']] = False
         self.resname = [resname]*self.naa
         self.iaa2org = [chain+'0000']*self.naa
         iaa_new = 0
@@ -153,30 +163,20 @@ class ProteinBackbone:
             self.resname[iaa_new] = resname_org[iaa]
             self.iaa2org[iaa_new] = iaa2org_org[iaa]
             iaa_new += 1
+        if calc_dihedral==True: self.calc_dihedral()
+        if check_chainbreak==True: self.seglist = self.check_chainbreak()
+
 
     ## insert fragment ##
     def insert(self, position, insertion):
         length = len(insertion)
-        self.insert_blank(position, length)
+        self.insert_blank(position, length, calc_dihedral=False, check_chainbreak=False)
         self.coord[position:position+length] = insertion.coord
         self.exists[position:position+length] = insertion.exists
         self.resname[position:position+length] = insertion.resname
         self.iaa2org[position:position+length] = insertion.iaa2org
-
-    ## add vitual H atoms ##
-    def addH(self, force=False):
-        for iaa in range(1,len(self.coord)):
-            if ((self.exists[iaa][self.atom2id['H']] == True) and (force==False)): continue
-            nh = zmat2xyz(self.param['length_NH'],
-                          self.param['angle_C_N_H'],
-                          self.param['dhdrl_CA_C_N_H'],
-                          self.coord[iaa-1][self.atom2id['CA']],
-                          self.coord[iaa-1][self.atom2id['C']],
-                          self.coord[iaa][self.atom2id['N']])
-            self.coord[iaa][self.atom2id['H']][0] = nh[0]
-            self.coord[iaa][self.atom2id['H']][1] = nh[1]
-            self.coord[iaa][self.atom2id['H']][2] = nh[2]
-            self.exists[iaa][self.atom2id['H']] = True
+        self.calc_dihedral()
+        self.seglist = self.check_chainbreak()
 
     ## add virtual O atoms ##
     def addO(self, force=False):
@@ -214,6 +214,44 @@ class ProteinBackbone:
             self.coord[iaa][self.atom2id['CB']][1] = cb[1]
             self.coord[iaa][self.atom2id['CB']][2] = cb[2]
             self.exists[iaa][self.atom2id['CB']] = True
+
+    ## add vitual H atoms ##
+    def addH(self, force=False):
+        for iaa in range(1,len(self.coord)):
+            if ((self.exists[iaa][self.atom2id['H']] == True) and (force==False)): continue
+            nh = zmat2xyz(self.param['length_NH'],
+                          self.param['angle_C_N_H'],
+                          self.param['dhdrl_CA_C_N_H'],
+                          self.coord[iaa-1][self.atom2id['CA']],
+                          self.coord[iaa-1][self.atom2id['C']],
+                          self.coord[iaa][self.atom2id['N']])
+            self.coord[iaa][self.atom2id['H']][0] = nh[0]
+            self.coord[iaa][self.atom2id['H']][1] = nh[1]
+            self.coord[iaa][self.atom2id['H']][2] = nh[2]
+            self.exists[iaa][self.atom2id['H']] = True
+
+    def addHA(self):
+        for iaa in range(len(self.coord)):
+            ha1 = zmat2xyz(self.param['length_CH'],
+                           self.param['angle_N_CA_1HA'],
+                           self.param['dhdrl_C_N_CA_1HA'],
+                           self.coord[iaa][self.atom2id['C']],
+                           self.coord[iaa][self.atom2id['N']],
+                           self.coord[iaa][self.atom2id['CA']])
+            ha2 = zmat2xyz(self.param['length_CH'],
+                           self.param['angle_N_CA_2HA'],
+                           self.param['dhdrl_C_N_CA_2HA'],
+                           self.coord[iaa][self.atom2id['C']],
+                           self.coord[iaa][self.atom2id['N']],
+                           self.coord[iaa][self.atom2id['CA']])
+            self.coord[iaa][self.atom2id['1HA']][0] = ha1[0]
+            self.coord[iaa][self.atom2id['1HA']][1] = ha1[1]
+            self.coord[iaa][self.atom2id['1HA']][2] = ha1[2]
+            self.exists[iaa][self.atom2id['1HA']] = True
+            self.coord[iaa][self.atom2id['2HA']][0] = ha2[0]
+            self.coord[iaa][self.atom2id['2HA']][1] = ha2[1]
+            self.coord[iaa][self.atom2id['2HA']][2] = ha2[2]
+            self.exists[iaa][self.atom2id['2HA']] = True
 
     ## check chain break ##
     def check_chainbreak(self):
@@ -324,7 +362,7 @@ class ProteinBackbone:
             iaa = self.org2iaa.get(org)
             if iaa is None: continue
             id_atom = self.atom2id[atomtype]
-            coord = [float(l[30:38]), float(l[38:46]), float(l[46:54])]
+            coord = [np.float(l[30:38]), np.float(l[38:46]), np.float(l[46:54])]
             self.coord[iaa][id_atom][0] = coord[0]
             self.coord[iaa][id_atom][1] = coord[1]
             self.coord[iaa][id_atom][2] = coord[2]
