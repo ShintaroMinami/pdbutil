@@ -182,7 +182,7 @@ class ProteinBackbone:
     def addO(self, force=False):
         for iaa in range(len(self.coord)-1):
             if ((self.exists[iaa][self.atom2id['O']] == True) and (force==False)): continue
-            co = zmat2xyz(self.param['length_CO'],
+            co = _zmat2xyz(self.param['length_CO'],
                           self.param['angle_N_C_O'],
                           self.param['dhdrl_CA_N_C_O'],
                           self.coord[iaa+1][self.atom2id['CA']],
@@ -197,13 +197,13 @@ class ProteinBackbone:
     def addCB(self, force=False):
         for iaa in range(len(self.coord)):
             if ((self.exists[iaa][self.atom2id['CB']] == True) and (force==False)): continue
-            cb1 = zmat2xyz(self.param['length_CC'],
+            cb1 = _zmat2xyz(self.param['length_CC'],
                            self.param['angle_N_CA_CB'],
                            self.param['dhdrl_C_N_CA_CB'],
                            self.coord[iaa][self.atom2id['C']],
                            self.coord[iaa][self.atom2id['N']],
                            self.coord[iaa][self.atom2id['CA']])
-            cb2 = zmat2xyz(self.param['length_CC'],
+            cb2 = _zmat2xyz(self.param['length_CC'],
                            self.param['angle_CB_CA_C'],
                            self.param['dhdrl_N_C_CA_CB'],
                            self.coord[iaa][self.atom2id['N']],
@@ -219,7 +219,7 @@ class ProteinBackbone:
     def addH(self, force=False):
         for iaa in range(1,len(self.coord)):
             if ((self.exists[iaa][self.atom2id['H']] == True) and (force==False)): continue
-            nh = zmat2xyz(self.param['length_NH'],
+            nh = _zmat2xyz(self.param['length_NH'],
                           self.param['angle_C_N_H'],
                           self.param['dhdrl_CA_C_N_H'],
                           self.coord[iaa-1][self.atom2id['CA']],
@@ -233,7 +233,7 @@ class ProteinBackbone:
     def addHA(self, force=False):
         for iaa in range(len(self.coord)):
             if ((self.exists[iaa][self.atom2id['1HA']] == False) or (force==True)):
-                ha1 = zmat2xyz(self.param['length_CH'],
+                ha1 = _zmat2xyz(self.param['length_CH'],
                                 self.param['angle_N_CA_1HA'],
                                 self.param['dhdrl_C_N_CA_1HA'],
                                 self.coord[iaa][self.atom2id['C']],
@@ -244,7 +244,7 @@ class ProteinBackbone:
                 self.coord[iaa][self.atom2id['1HA']][2] = ha1[2]
                 self.exists[iaa][self.atom2id['1HA']] = True
             if ((self.exists[iaa][self.atom2id['2HA']] == False) or (force==True)):
-                ha2 = zmat2xyz(self.param['length_CH'],
+                ha2 = _zmat2xyz(self.param['length_CH'],
                                 self.param['angle_N_CA_2HA'],
                                 self.param['dhdrl_C_N_CA_2HA'],
                                 self.coord[iaa][self.atom2id['C']],
@@ -279,17 +279,17 @@ class ProteinBackbone:
         self.dihedral = np.zeros((self.naa, 3), dtype=np.float)
         for iaa in range(self.naa):
             if (iaa > 0) and (self.exists[iaa-1][self.atom2id['C']] == True):
-                self.dihedral[iaa][0] = xyz2dihedral(self.coord[iaa-1][self.atom2id['C']],
+                self.dihedral[iaa][0] = _xyz2dihedral(self.coord[iaa-1][self.atom2id['C']],
                                                      self.coord[iaa][self.atom2id['N']],
                                                      self.coord[iaa][self.atom2id['CA']],
                                                      self.coord[iaa][self.atom2id['C']])
             if (iaa < self.naa-1) and (self.exists[iaa+1][self.atom2id['N']] == True):
-                self.dihedral[iaa][1] = xyz2dihedral(self.coord[iaa][self.atom2id['N']],
+                self.dihedral[iaa][1] = _xyz2dihedral(self.coord[iaa][self.atom2id['N']],
                                                      self.coord[iaa][self.atom2id['CA']],
                                                      self.coord[iaa][self.atom2id['C']],
                                                      self.coord[iaa+1][self.atom2id['N']])
             if (iaa < self.naa-1) and (self.exists[iaa+1][self.atom2id['CA']] == True):
-                self.dihedral[iaa][2] = xyz2dihedral(self.coord[iaa][self.atom2id['CA']],
+                self.dihedral[iaa][2] = _xyz2dihedral(self.coord[iaa][self.atom2id['CA']],
                                                      self.coord[iaa][self.atom2id['C']],
                                                      self.coord[iaa+1][self.atom2id['N']],
                                                      self.coord[iaa+1][self.atom2id['CA']])
@@ -376,17 +376,17 @@ class ProteinBackbone:
 
 
 #### Functions ####
-def zmat2xyz(bond, angle, dihedral, one, two , three):
+def _zmat2xyz(bond, angle, dihedral, one, two , three):
     oldvec = np.ones(4, dtype=np.float)
     oldvec[0] = bond * np.sin(angle) * np.sin(dihedral)
     oldvec[1] = bond * np.sin(angle) * np.cos(dihedral)
     oldvec[2] = bond * np.cos(angle)
-    mat = viewat(three, two, one)
+    mat = _viewat(three, two, one)
     newvec = np.dot(mat, oldvec)
     # return
     return newvec
 
-def viewat(p1, p2, p3):
+def _viewat(p1, p2, p3):
     # vector #
     p12 = p2 - p1
     p13 = p3 - p1
@@ -408,7 +408,7 @@ def viewat(p1, p2, p3):
     # return
     return mat
 
-def xyz2dihedral(p1, p2, p3, p4):
+def _xyz2dihedral(p1, p2, p3, p4):
     # small val #
     eps = 0.0000001
     # bond vector
