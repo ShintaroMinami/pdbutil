@@ -342,7 +342,8 @@ class ProteinBackbone:
 
     ## read pdb file ##
     def readpdb(self, file):
-        lines = open(file, "r").read().splitlines()
+        with open(file, "r") as fh:
+            lines = fh.read().splitlines()
         # exists protein length
         self.naa = 0
         self.org2iaa = {}
