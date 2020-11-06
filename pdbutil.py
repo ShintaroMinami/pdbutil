@@ -52,7 +52,7 @@ class ProteinBackbone:
         List of continuous segments
     """
 
-    def __init__(self, length=0, file=None, copyfrom=None, calc_dihedral=True, check_chainbreak=True):
+    def __init__(self, length=0, file=None, copyfrom=None, extractfrom=None, calc_dihedral=True, check_chainbreak=True):
         """
         Parameters
         ----------
@@ -93,7 +93,16 @@ class ProteinBackbone:
             self.dihedral = copyfrom.dihedral.copy()
             self.chainbreak = copyfrom.chainbreak.copy()
             self.seglist = copyfrom.seglist.copy()
-        elif length > 0:
+        elif extractfrom is not None:
+            original, start, goal = extractfrom
+            self.naa = goal - start + 1
+            self.coord = original.coord[start:goal+1].copy()
+            self.exists = original.exists[start:goal+1].copy()
+            self.resname = original.resname[start:goal+1].copy()
+            self.iaa2org = original.iaa2org[start:goal+1].copy()
+            self.dihedral = original.dihedral[start:goal+1].copy()
+            self.seglist = self.check_chainbreak()
+        elif length >= 0:
             self.naa = length
             self.coord = np.zeros((self.naa, len(self.atom2id), 3), dtype=np.float)
             self.exists = np.ones((self.naa, len(self.atom2id)), dtype=np.bool)
@@ -176,6 +185,8 @@ class ProteinBackbone:
         self.resname[position:position+length] = insertion.resname
         self.iaa2org[position:position+length] = insertion.iaa2org
         self.calc_dihedral()
+        self.seglist = []
+        self.chainbreak = []
         self.seglist = self.check_chainbreak()
 
     ## add virtual O atoms ##
@@ -258,6 +269,7 @@ class ProteinBackbone:
     ## check chain break ##
     def check_chainbreak(self):
         self.chainbreak = [False] * self.naa
+        self.seglist = []
         ini = 0
         for iaa in range(self.naa):
             cn = np.sqrt(((self.coord[iaa-1][self.atom2id['C']] - self.coord[iaa][self.atom2id['N']])**2).sum()) if iaa!=0 else self.param['length_CN']
