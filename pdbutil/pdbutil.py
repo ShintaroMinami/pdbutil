@@ -42,6 +42,8 @@ class ProteinBackbone:
         Residue name.
     iaa2org : numpy str vector (naa)
         Original chain ID and residue number.
+    org2iaa : dict
+        Convert original chain ID and residue number to system residue number.
     dihedral : numpy float matrix (naa, 3)
         Dihedral angles (phi, psi, omega).
     distmat : numpy float matrix (naa, naa)
@@ -69,14 +71,16 @@ class ProteinBackbone:
         """
         self.atom2id = {'N':0, 'CA':1, 'C':2, 'O':3, 'CB':4, 'H':5, '1HA':6, '2HA':7}
         self.id2atom = ['N', 'CA', 'C', 'O', 'CB', 'H', '1HA', '2HA']
-        self.param = {'angle_N_CA_CB':np.deg2rad(110.6), 'angle_CB_CA_C':np.deg2rad(110.6),
-                        'angle_C_N_H':np.deg2rad(123.0), 'angle_N_C_O':np.deg2rad(122.7),
-                        'angle_N_CA_1HA':np.deg2rad(109.5), 'angle_N_CA_2HA':np.deg2rad(109.5),
-                        'dhdrl_C_N_CA_CB':np.deg2rad(-121.4), 'dhdrl_N_C_CA_CB':np.deg2rad(121.4),
-                        'dhdrl_CA_C_N_H':np.deg2rad(0.0), 'dhdrl_CA_N_C_O':np.deg2rad(0.0),
-                        'dhdrl_C_N_CA_1HA':np.deg2rad(121.4), 'dhdrl_C_N_CA_2HA':np.deg2rad(-121.4),
-                        'length_CN':1.33, 'length_NCA':1.46, 'length_CAC':1.52,
-                        'length_CC':1.54, 'length_CO':1.24, 'length_NH':1.01, 'length_CH':1.09}
+        self.param = {'angle_N_CA_C':np.deg2rad(111.2), 'angle_CA_C_N':np.deg2rad(116.2),
+                      'angle_C_N_CA':np.deg2rad(121.7),
+                      'angle_N_CA_CB':np.deg2rad(110.6), 'angle_CB_CA_C':np.deg2rad(110.6),
+                      'angle_C_N_H':np.deg2rad(123.0), 'angle_N_C_O':np.deg2rad(122.7),
+                      'angle_N_CA_1HA':np.deg2rad(109.5), 'angle_N_CA_2HA':np.deg2rad(109.5),
+                      'dhdrl_C_N_CA_CB':np.deg2rad(-121.4), 'dhdrl_N_C_CA_CB':np.deg2rad(121.4),
+                      'dhdrl_CA_C_N_H':np.deg2rad(0.0), 'dhdrl_CA_N_C_O':np.deg2rad(0.0),
+                      'dhdrl_C_N_CA_1HA':np.deg2rad(121.4), 'dhdrl_C_N_CA_2HA':np.deg2rad(-121.4),
+                      'length_CN':1.33, 'length_NCA':1.46, 'length_CAC':1.52,
+                      'length_CC':1.54, 'length_CO':1.24, 'length_NH':1.01, 'length_CH':1.09}
         self.chainbreak = []
         self.seglist = []
         if file is not None:

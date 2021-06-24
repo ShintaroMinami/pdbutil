@@ -1,3 +1,6 @@
-test/**
-__pycache__/**
-*/*.pyc
+*/__pycache__
+*/.mypy*
+tests/integration_tests/*/log.*
+dist
+build
+*.egg-info
