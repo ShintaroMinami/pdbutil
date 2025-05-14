@@ -28,6 +28,12 @@ setup(
     include_package_data=True,
     scripts=[
     ],
+    entry_points={
+        'console_scripts': [
+            'rmsd = pdbutil.main:rmsd',
+            'superpose = pdbutil.main:superpose',
+        ]
+    },
 
     classifiers=[
         'License :: OSI Approved :: MIT License',
