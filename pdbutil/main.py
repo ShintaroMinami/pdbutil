@@ -1,5 +1,5 @@
 
-def rmsd():
+def pdb_rmsd():
     """
     Command line interface for calculating RMSD.
     """
@@ -38,7 +38,7 @@ def rmsd():
             print(f" {rmsd:8.5f}  {file_pair}")
 
 
-def superpose():
+def pdb_superpose():
     """
     Command line interface for superposing PDB structures onto a reference.
     """
@@ -77,5 +77,5 @@ if __name__ == '__main__':
     import sys
     sys.path.append(str(Path(__file__).parent.parent))
 
-    #rmsd()
-    superpose()
+    #pdb_rmsd()
+    pdb_superpose()

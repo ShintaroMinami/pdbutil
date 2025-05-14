@@ -30,8 +30,8 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'rmsd = pdbutil.main:rmsd',
-            'superpose = pdbutil.main:superpose',
+            'pdb_rmsd = pdbutil.main:pdb_rmsd',
+            'pdb_superpose = pdbutil.main:pdb_superpose',
         ]
     },
 
