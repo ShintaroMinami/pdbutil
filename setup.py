@@ -12,7 +12,7 @@ setup(
     packages=['pdbutil'],
     license='MIT',
     url='https://github.com/ShintaroMinami/pdbutil',
-    description='A simple module for handling protein backbone coordinates',
+    description='A simple module for handling protein backbone coordinates.',
     long_description=long_description,
     long_description_content_type='text/markdown',
     keywords=['pdb', 'backbone'],
@@ -23,7 +23,7 @@ setup(
     use_scm_version={'local_scheme': 'no-local-version'},
 
     setup_requires=['setuptools_scm'],
-    install_requires=['numpy'],
+    install_requires=['numpy', 'biopython'],
  
     include_package_data=True,
     scripts=[
@@ -31,6 +31,6 @@ setup(
 
     classifiers=[
         'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.x',
     ],
 )
