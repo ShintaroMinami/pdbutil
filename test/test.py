@@ -2,16 +2,26 @@
 
 import sys
 sys.path.append('../')
-from pdbutil import ProteinBackbone as pdb
 
-struct = pdb(file='6dg5A.pdb')
-struct.addHA(force=True)
-struct.addH(force=True)
-struct.addO(force=True)
-struct.addH(force=True)
-struct.calc_dihedral()
-struct.calc_distmat()
-struct.check_chainbreak()
-struct.get_nearestN(5)
+import numpy as np
+from scipy.spatial.transform import Rotation
+from pdbutil import calc_rmsd, read_pdb, write_pdb
+from pdbutil.rmsd import superpose
 
-struct.printpdb(open('output.pdb', 'w'))
+
+data_dict = read_pdb('6dg5A.pdb')
+xyz = data_dict['xyz_bb']
+xyz2 = []
+for _ in range(20):
+    rot_random = Rotation.random().as_matrix()
+    xyz2.append(np.einsum('i j, l a i -> l a j', rot_random, xyz) + np.random.randn(1,1,3))
+xyz2 = np.stack(xyz2, axis=0)
+
+rmsd = calc_rmsd(xyz2[:,:,2], xyz2[:10,:,1])
+print(rmsd.shape)
+
+sup, rmsd = superpose(xyz, xyz2, return_rmsd=True)
+data_dict['xyz_bb'] = sup[0]
+
+print(rmsd)
+

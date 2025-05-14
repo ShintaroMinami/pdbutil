@@ -4,3 +4,4 @@ tests/integration_tests/*/log.*
 dist
 build
 *.egg-info
+.eggs

@@ -7,6 +7,7 @@ from Bio.PDB import PDBParser
 
 MAX_FILE_PATH = 255
 DEFAULT_BB_ATOMS = ['N', 'CA', 'C', 'O']
+BB_ATOMS_TO_INDEX = {a: i for i, a in enumerate(DEFAULT_BB_ATOMS)}
 THREE2ONE = {
     'ALA': 'A', 'ARG': 'R', 'ASN': 'N', 'ASP': 'D', 'CYS': 'C',
     'GLU': 'E', 'GLN': 'Q', 'GLY': 'G', 'HIS': 'H', 'ILE': 'I',
