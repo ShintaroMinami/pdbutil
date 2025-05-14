@@ -9,6 +9,7 @@ with open(path.join(dir_path, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='pdbutil',
+    version='2.0.0',
     packages=['pdbutil'],
     license='MIT',
     url='https://github.com/ShintaroMinami/pdbutil',
@@ -37,6 +38,6 @@ setup(
 
     classifiers=[
         'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 3.x',
+        'Programming Language :: Python :: 3',
     ],
 )
