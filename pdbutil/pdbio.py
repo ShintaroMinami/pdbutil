@@ -54,6 +54,10 @@ def read_pdb(
     pdb_string = Path(pdb).read_text() if Path(pdb[:MAX_FILE_PATH]).is_file() else pdb
     
     structure = _parser.get_structure('protein', StringIO(pdb_string))
+
+    if len(structure) == 0:
+        raise ValueError(f"Error: Invalid PDB file or pdb_string.")
+    
     model = structure[model_num]
     
     xyz_ca, xyz_backbone, xyz_allatom = [], [], []
