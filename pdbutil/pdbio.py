@@ -1,3 +1,4 @@
+import sys
 from io import StringIO
 from typing import Dict
 from pathlib import Path
@@ -80,6 +81,9 @@ def read_pdb(
                     bfac = atom.get_bfactor()
                 if atom.name in bb_atoms_dict:
                     xyz_bb[bb_atoms_dict[atom.name]] = xyz
+            if any([xyz is None for xyz in xyz_bb]):
+                sys.stderr.write(f"Warning: Missing backbone atom in residue {res3} {chain_id}{resnum} and skipped\n")
+                continue
             xyz_backbone.append(np.stack(xyz_bb))
             xyz_allatom.append(np.stack(xyz_aa))
             bfactor.append(bfac)
