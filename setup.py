@@ -9,7 +9,7 @@ with open(path.join(dir_path, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='pdbutil',
-    version='2.0.0',
+    version='2.0.1',
     packages=['pdbutil'],
     license='MIT',
     url='https://github.com/ShintaroMinami/pdbutil',
