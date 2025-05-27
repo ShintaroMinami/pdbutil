@@ -106,7 +106,7 @@ def read_pdb(
     return {
         'xyz_ca': np.stack(xyz_ca),
         'xyz_bb': np.stack(xyz_backbone),
-        'xyz_aa': xyz_allatom,
+        'xyz_aa': np.stack(xyz_allatom),
         'chain': np.array(chains),
         'resnum': np.array(resnumber),
         'res1': np.array(residue1),
