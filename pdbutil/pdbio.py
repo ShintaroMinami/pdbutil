@@ -113,8 +113,8 @@ def read_pdb(
         'res3': np.array(residue3),
         'bfactor': np.array(bfactor),
         'insertion': np.array(insertion),
-        'pdbstring': pdb_string,
         'mask_aa': np.stack(mask_allatom),
+        'pdbstring': pdb_string,
     }
 
 
