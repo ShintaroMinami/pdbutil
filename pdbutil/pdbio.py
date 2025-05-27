@@ -4,18 +4,20 @@ from typing import Dict
 from pathlib import Path
 import numpy as np
 from Bio.PDB import PDBParser
+from .protein_constants import (
+    MAX_STANDARD_ATOMS,
+    resname_3to1,
+    resname_to_atom14names,
+    atom14name_to_index,
+    get_standard_atom_mask,
+)
 
 
 MAX_FILE_PATH = 255
 DEFAULT_BB_ATOMS = ['N', 'CA', 'C', 'O']
 BB_ATOMS_TO_INDEX = {a: i for i, a in enumerate(DEFAULT_BB_ATOMS)}
-THREE2ONE = {
-    'ALA': 'A', 'ARG': 'R', 'ASN': 'N', 'ASP': 'D', 'CYS': 'C',
-    'GLU': 'E', 'GLN': 'Q', 'GLY': 'G', 'HIS': 'H', 'ILE': 'I',
-    'LEU': 'L', 'LYS': 'K', 'MET': 'M', 'PHE': 'F', 'PRO': 'P',
-    'SER': 'S', 'THR': 'T', 'TRP': 'W', 'TYR': 'Y', 'VAL': 'V'
-}
-ONE2THREE = {v: k for k, v in THREE2ONE.items()}
+
+BB_ATOMS_ALIAS = {'OXT': 'O'}
 
 _parser= PDBParser(QUIET=True)
 
@@ -61,14 +63,14 @@ def read_pdb(
     
     model = structure[model_num]
     
-    xyz_ca, xyz_backbone, xyz_allatom = [], [], []
+    xyz_ca, xyz_backbone, xyz_allatom, mask_allatom = [], [], [], []
     chains, resnumber, residue1, residue3, bfactor, insertion = [], [], [], [], [], []
 
     for chain in model:
         chain_id = chain.get_id()
         for residue in chain:
             res3 = residue.get_resname()
-            res1 = THREE2ONE.get(res3, 'X')
+            res1 = resname_3to1.get(res3, 'X')
             _, resnum, ins = residue.get_id()
             residue1.append(res1)
             residue3.append(res3)
@@ -76,22 +78,31 @@ def read_pdb(
             resnumber.append(int(resnum))
             insertion.append(ins)
             xyz_bb = [None] * len(bb_atoms_dict)
-            xyz_aa = []
+            xyz_aa = [np.zeros(3, dtype=float)] * MAX_STANDARD_ATOMS
+            mask_aa = [False] * MAX_STANDARD_ATOMS
             for atom in residue:
+                atom_name = BB_ATOMS_ALIAS.get(atom.name, atom.name)
                 xyz = atom.get_coord()
-                xyz_aa.append(xyz)
                 if atom.name == 'CA':
                     xyz_ca.append(xyz)
                     bfac = atom.get_bfactor()
                 if atom.name in bb_atoms_dict:
-                    xyz_bb[bb_atoms_dict[atom.name]] = xyz
+                    xyz_bb[bb_atoms_dict[atom_name]] = xyz
+                if not atom_name in atom14name_to_index[res3]:
+                    raise NotImplementedError(f"Atom {atom_name} in residue {res3} is not supported.")
+                xyz_aa[atom14name_to_index[res3][atom_name]] = xyz
+                mask_aa[atom14name_to_index[res3][atom_name]] = True
             if any([xyz is None for xyz in xyz_bb]):
                 sys.stderr.write(f"Warning: Missing backbone atom in residue {res3} {chain_id}{resnum} and skipped\n")
                 continue
             xyz_backbone.append(np.stack(xyz_bb))
             xyz_allatom.append(np.stack(xyz_aa))
+            mask_allatom.append(np.array(mask_aa, dtype=bool))
+            if not np.all(mask_aa == get_standard_atom_mask(res3)):
+                mask_aa != get_standard_atom_mask(res3)
+                missings = np.array(resname_to_atom14names[res3])[mask_aa != get_standard_atom_mask(res3)]
+                sys.stderr.write(f"Warning: Missing sidechain atoms in residue {res3} {chain_id}{resnum}, missing={missings}\n")
             bfactor.append(bfac)
-
     return {
         'xyz_ca': np.stack(xyz_ca),
         'xyz_bb': np.stack(xyz_backbone),
@@ -103,6 +114,7 @@ def read_pdb(
         'bfactor': np.array(bfactor),
         'insertion': np.array(insertion),
         'pdbstring': pdb_string,
+        'mask_aa': np.stack(mask_allatom),
     }
 
 
@@ -128,7 +140,7 @@ def write_pdb(
         default_insertion: str=' ',
         renumber: bool=False,
         pdb_file: str=None,
-        **args,
+        **kwargs,
         ) -> str:
     """
     Write a PDB format string from the given parameters.
