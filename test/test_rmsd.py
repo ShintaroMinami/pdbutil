@@ -11,6 +11,9 @@ from pdbutil.rmsd import superpose
 
 data_dict = read_pdb('6dg5A.pdb')
 xyz = data_dict['xyz_bb']
+xyz_aa = data_dict['xyz_aa']
+print(data_dict['xyz_aa'].shape)
+
 xyz2 = []
 for _ in range(20):
     rot_random = Rotation.random().as_matrix()
