@@ -127,9 +127,20 @@ def renumbering_for_each_chain(chain: np.ndarray) -> np.ndarray:
     return resnum
 
 
+def check_xyz_model_type(xyz: np.ndarray) -> str:
+    if xyz.shape[-2] == 14:
+        return 'aa'
+    elif xyz.shape[-2] == 4:
+        return 'bb'
+    else:
+        raise ValueError(f"Invalid xyz shape: {xyz.shape}. Expected 14 (all-atom) or 4 (backbone) atoms per residue.")
+
+
 def write_pdb(
         xyz: np.ndarray=None,
         xyz_bb: np.ndarray=None,
+        xyz_aa: np.ndarray=None,
+        mask_aa: np.ndarray=None,
         res3: np.ndarray=None,
         resnum: np.ndarray=None,
         chain: np.ndarray=None,
@@ -140,19 +151,22 @@ def write_pdb(
         default_insertion: str=' ',
         renumber: bool=False,
         pdb_file: str=None,
+        model_type: str=None,
         **kwargs,
         ) -> str:
     """
     Write a PDB format string from the given parameters.
     """
-    assert (xyz is not None) or (xyz_bb is not None), "xyz or xyz_bb must be provided"
+    assert (xyz is not None) or (xyz_bb is not None), "either xyz, xyz_aa or xyz_bb must be provided"
     if xyz is None:
-        xyz = xyz_bb
+        xyz = xyz_aa if xyz_aa is not None else xyz_bb
+    if model_type is None:
+        model_type = check_xyz_model_type(xyz)
+
     if type(xyz) != np.ndarray:
         raise TypeError(f"xyz should be a numpy array, got {type(xyz)}")
     if xyz.ndim != 3:
         raise ValueError(f"xyz should be a 3D array, got {xyz.ndim}D")
-    atoms = [DEFAULT_BB_ATOMS] * xyz.shape[0]
     res3 = np.full((xyz.shape[0],), default_resname) if res3 is None else res3
     chain = np.full((xyz.shape[0],), default_chain) if chain is None else chain
     bfactor = np.full((xyz.shape[0],), default_bfactor) if bfactor is None else bfactor
@@ -165,17 +179,25 @@ def write_pdb(
         raise ValueError(f"xyz and chain must have the same length, got {xyz.shape[0]} and {chain.shape[0]}")
     if xyz.shape[0] != bfactor.shape[0]:
         raise ValueError(f"xyz and bfactor must have the same length, got {xyz.shape[0]} and {bfactor.shape[0]}")
-
+    if model_type == 'aa':
+        mask_atoms = [get_standard_atom_mask(r3) for r3 in res3] if mask_aa is None else mask_aa
+    else:
+        mask_atoms = [None] * xyz.shape[0]
     insertion = np.full((xyz.shape[0],), default_insertion) # insertion code is not used
 
     pdb_string, iatom, chain_old = "", 0, None
-    for xbb, atom4, r3, i, c, ins, bfac in zip(xyz, atoms, res3, resnum, chain, insertion, bfactor):
+    for xbb, r3, i, c, ins, bfac, mask in zip(xyz, res3, resnum, chain, insertion, bfactor, mask_atoms):
         if (chain_old is not None) and (c != chain_old):
             pdb_string += f"TER\n"
-        for x, a in zip(xbb, atom4):
+        atoms = resname_to_atom14names[r3] if model_type == 'aa' else DEFAULT_BB_ATOMS
+        if mask is not None:
+            atoms = np.array(atoms)[mask]
+            xbb = xbb[mask]
+        for x, a in zip(xbb, atoms):
             iatom += 1
-            pdb_string += f"ATOM  {iatom:5d}  {a:<2}  {r3} {c}{i:4d}{ins:<1}   {x[0]:8.3f}{x[1]:8.3f}{x[2]:8.3f}{bfac:6.2f}\n"
+            pdb_string += f"ATOM  {iatom:5d}  {a:<3} {r3} {c}{i:4d}{ins:<1}   {x[0]:8.3f}{x[1]:8.3f}{x[2]:8.3f}{bfac:6.2f}\n"
         chain_old = c
+    pdb_string += f"TER\n"
     pdb_string += f"END\n"
 
     # Write PDB file if a file path is provided
