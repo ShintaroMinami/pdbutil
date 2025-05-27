@@ -157,7 +157,7 @@ def write_pdb(
     """
     Write a PDB format string from the given parameters.
     """
-    assert (xyz is not None) or (xyz_bb is not None), "either xyz, xyz_aa or xyz_bb must be provided"
+    assert (xyz is not None) or (xyz_bb is not None) or (xyz_aa is not None), "either xyz, xyz_aa or xyz_bb must be provided"
     if xyz is None:
         xyz = xyz_aa if xyz_aa is not None else xyz_bb
     if model_type is None:
