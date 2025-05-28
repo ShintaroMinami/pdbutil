@@ -13,11 +13,11 @@ from .protein_constants import (
 )
 
 
-MAX_FILE_PATH = 255
+_MAX_FILE_PATH = 255
+_BB_ATOMS_ALIAS = {'OXT': 'O'}
+
 DEFAULT_BB_ATOMS = ['N', 'CA', 'C', 'O']
 BB_ATOMS_TO_INDEX = {a: i for i, a in enumerate(DEFAULT_BB_ATOMS)}
-
-BB_ATOMS_ALIAS = {'OXT': 'O'}
 
 _parser= PDBParser(QUIET=True)
 
@@ -25,7 +25,8 @@ _parser= PDBParser(QUIET=True)
 def read_pdb(
         pdb: str,
         model_num: int=0,
-        bb_atoms_dict: Dict={a: i for i, a in enumerate(DEFAULT_BB_ATOMS)}  # Default mapping,
+        sidechain_warning: bool=True,
+        bb_atoms_dict: Dict=BB_ATOMS_TO_INDEX  # Default mapping,
         ) -> dict:
     """
     Read a PDB file/string and return a dictionary with the following keys:
@@ -54,7 +55,7 @@ def read_pdb(
     - 'pdbstring': string of the PDB file content
     """
     
-    pdb_string = Path(pdb).read_text() if Path(pdb[:MAX_FILE_PATH]).is_file() else pdb
+    pdb_string = Path(pdb).read_text() if Path(pdb[:_MAX_FILE_PATH]).is_file() else pdb
     
     structure = _parser.get_structure('protein', StringIO(pdb_string))
 
@@ -81,7 +82,7 @@ def read_pdb(
             xyz_aa = [np.zeros(3, dtype=float)] * MAX_STANDARD_ATOMS
             mask_aa = [False] * MAX_STANDARD_ATOMS
             for atom in residue:
-                atom_name = BB_ATOMS_ALIAS.get(atom.name, atom.name)
+                atom_name = _BB_ATOMS_ALIAS.get(atom.name, atom.name)
                 xyz = atom.get_coord()
                 if atom.name == 'CA':
                     xyz_ca.append(xyz)
@@ -101,7 +102,8 @@ def read_pdb(
             if not np.all(mask_aa == get_standard_atom_mask(res3)):
                 mask_aa != get_standard_atom_mask(res3)
                 missings = np.array(resname_to_atom14names[res3])[mask_aa != get_standard_atom_mask(res3)]
-                sys.stderr.write(f"Warning: Missing sidechain atoms in residue {res3} {chain_id}{resnum}, missing={missings}\n")
+                if sidechain_warning:
+                    sys.stderr.write(f"Warning: Missing sidechain atoms in residue {res3} {chain_id}{resnum}, missing={missings}\n")
             bfactor.append(bfac)
     return {
         'xyz_ca': np.stack(xyz_ca),
