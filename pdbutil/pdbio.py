@@ -65,7 +65,7 @@ def read_pdb(
     model = structure[model_num]
     
     xyz_ca, xyz_backbone, xyz_allatom, mask_allatom = [], [], [], []
-    chains, resnumber, residue1, residue3, bfactor, insertion = [], [], [], [], [], []
+    chains, resnumber, residue1, residue3, occupancy, bfactor, insertion = [], [], [], [], [], [], []
 
     for chain in model:
         chain_id = chain.get_id()
@@ -87,6 +87,7 @@ def read_pdb(
                 if atom.name == 'CA':
                     xyz_ca.append(xyz)
                     bfac = atom.get_bfactor()
+                    occu = atom.get_occupancy()
                 if atom.name in bb_atoms_dict:
                     xyz_bb[bb_atoms_dict[atom_name]] = xyz
                 if not atom_name in atom14name_to_index[res3]:
@@ -105,6 +106,7 @@ def read_pdb(
                 if sidechain_warning:
                     sys.stderr.write(f"Warning: Missing sidechain atoms in residue {res3} {chain_id}{resnum}, missing={missings}\n")
             bfactor.append(bfac)
+            occupancy.append(occu)
     return {
         'xyz_ca': np.stack(xyz_ca),
         'xyz_bb': np.stack(xyz_backbone),
@@ -114,6 +116,7 @@ def read_pdb(
         'res1': np.array(residue1),
         'res3': np.array(residue3),
         'bfactor': np.array(bfactor),
+        'occupancy': np.array(occupancy),
         'insertion': np.array(insertion),
         'mask_aa': np.stack(mask_allatom),
         'pdbstring': pdb_string,
@@ -146,9 +149,11 @@ def write_pdb(
         res3: np.ndarray=None,
         resnum: np.ndarray=None,
         chain: np.ndarray=None,
+        occupancy: np.ndarray=None,
         bfactor: np.ndarray=None,
         default_resname: str='XXX',
         default_chain: str='A',
+        default_occupancy: float=1.0,
         default_bfactor: float=0.0,
         default_insertion: str=' ',
         renumber: bool=False,
@@ -171,6 +176,7 @@ def write_pdb(
         raise ValueError(f"xyz should be a 3D array, got {xyz.ndim}D")
     res3 = np.full((xyz.shape[0],), default_resname) if res3 is None else res3
     chain = np.full((xyz.shape[0],), default_chain) if chain is None else chain
+    bfactor = np.full((xyz.shape[0],), default_occupancy) if bfactor is None else bfactor
     bfactor = np.full((xyz.shape[0],), default_bfactor) if bfactor is None else bfactor
     resnum = renumbering_for_each_chain(chain) if (resnum is None) or renumber else resnum
     if xyz.shape[0] != res3.shape[0]:
@@ -188,7 +194,7 @@ def write_pdb(
     insertion = np.full((xyz.shape[0],), default_insertion) # insertion code is not used
 
     pdb_string, iatom, chain_old = "", 0, None
-    for xbb, r3, i, c, ins, bfac, mask in zip(xyz, res3, resnum, chain, insertion, bfactor, mask_atoms):
+    for xbb, r3, i, c, ins, occu, bfac, mask in zip(xyz, res3, resnum, chain, insertion, occupancy, bfactor, mask_atoms):
         if (chain_old is not None) and (c != chain_old):
             pdb_string += f"TER\n"
         atoms = resname_to_atom14names[r3] if model_type == 'aa' else DEFAULT_BB_ATOMS
@@ -197,7 +203,7 @@ def write_pdb(
             xbb = xbb[mask]
         for x, a in zip(xbb, atoms):
             iatom += 1
-            pdb_string += f"ATOM  {iatom:5d}  {a:<3} {r3} {c}{i:4d}{ins:<1}   {x[0]:8.3f}{x[1]:8.3f}{x[2]:8.3f}{bfac:6.2f}\n"
+            pdb_string += f"ATOM  {iatom:5d}  {a:<3} {r3} {c}{i:4d}{ins:<1}   {x[0]:8.3f}{x[1]:8.3f}{x[2]:8.3f}{occu:6.2f}{bfac:6.2f}\n"
         chain_old = c
     pdb_string += f"TER\n"
     pdb_string += f"END\n"
