@@ -1,5 +1,5 @@
 import numpy as np
-from .pdbio import BB_ATOMS_TO_INDEX
+from .pdb_io import BB_ATOMS_TO_INDEX
 
 
 def _rotate(X:np.array, rot:np.array, vec:np.array)->np.array:
@@ -19,6 +19,7 @@ def kabsch(A:np.array, B:np.array, return_rotmat=False):
     numpy array of shape (N, 3) or (B, N, 3)
         Rotated version of B that best matches A.
     """
+    org_shape_A, org_shape_B = A.shape, B.shape
     X = np.expand_dims(A, axis=0) if len(A.shape) == 2 else A
     Y = np.expand_dims(B, axis=0) if len(B.shape) == 2 else B
     X_mean = X.mean(axis=-2, keepdims=True)
@@ -34,13 +35,13 @@ def kabsch(A:np.array, B:np.array, return_rotmat=False):
     if return_rotmat:
         return rot, vec
     else:
-        return X, _rotate(Y, rot, vec)
+        return X.reshape(org_shape_A), _rotate(Y, rot, vec).reshape(org_shape_B)
 
 
 def _format_xyz(xyz_ref, xyz_trg, axis_L=None):
     xyz_ref = np.expand_dims(xyz_ref, axis=0) if xyz_ref.shape[0]!=1 else xyz_ref
     length = xyz_ref.shape[1]
-    assert length > 4, "xyz_ref must have more than 4 residues"
+    assert length >= 3, "xyz_ref must have at least 3 residues"
     if xyz_ref.ndim == 3:
         xyz_ref_ca = xyz_ref
     elif xyz_ref.ndim == 4:

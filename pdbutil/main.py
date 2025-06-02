@@ -11,7 +11,7 @@ def pdb_rmsd():
     args = parser.parse_args()
 
     import numpy as np
-    from pdbutil.pdbio import read_pdb    
+    from pdbutil.pdb_io import read_pdb    
     from pdbutil.rmsd import calc_rmsd
     
     xyz1, file1 = [read_pdb(f)['xyz_ca'] for f in args.pdb1], args.pdb1
@@ -51,7 +51,7 @@ def pdb_superpose():
 
     from pathlib import Path
     import numpy as np
-    from pdbutil.pdbio import read_pdb, write_pdb
+    from pdbutil.pdb_io import read_pdb, write_pdb
     from pdbutil.rmsd import superpose
     
     datadicts, names = [read_pdb(f) for f in args.pdbs], [str(Path(f).stem) for f in args.pdbs]
@@ -77,5 +77,4 @@ if __name__ == '__main__':
     import sys
     sys.path.append(str(Path(__file__).parent.parent))
 
-    #pdb_rmsd()
     pdb_superpose()
