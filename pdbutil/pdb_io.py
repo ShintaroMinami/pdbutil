@@ -24,35 +24,32 @@ _parser= PDBParser(QUIET=True)
 
 def read_pdb(
         pdb: str,
-        model_num: int=0,
-        sidechain_warning: bool=True,
-        bb_atoms_dict: Dict=BB_ATOMS_TO_INDEX  # Default mapping,
+        model_num: int = 0,
+        sidechain_warnings: bool = True,
+        bb_atoms_dict: Dict = BB_ATOMS_TO_INDEX
         ) -> dict:
     """
-    Read a PDB file/string and return a dictionary with the following keys:
-    
-    Inputs:
-    pdb: str
-        Path to the PDB file or string content of the PDB file.
-    model_num: int
-        Model number to extract from the PDB file. Default is 0.
-    bb_atoms_dict: dict
-        Dictionary mapping backbone atom names to their indices.
-        Default is {'N':0, 'CA':1, 'C':2, 'O':3}.
-    
+    Reads a PDB file or string and returns a dictionary with structural information.
+
+    Args:
+        pdb (str): Path to the PDB file or string content of the PDB file.
+        model_num (int): Model number to extract from the PDB file. Default is 0.
+        sidechain_warnings (bool): Whether to display warnings for missing sidechain atoms. Default is True.
+        bb_atoms_dict (Dict): Dictionary mapping backbone atom names to their indices.
+            Default is {'N': 0, 'CA': 1, 'C': 2, 'O': 3}.
+
     Returns:
-    dict:
-        A dictionary containing the following keys:
-    - 'xyz_ca': numpy array of CA atom coordinates
-    - 'xyz_bb': numpy array of backbone coordinates
-    - 'xyz_aa': list of numpy array of all atom coordinates
-    - 'chain': numpy array of chain identifiers
-    - 'resnum': numpy array of residue numbers
-    - 'res1': numpy array of one letter residue types
-    - 'res3': numpy array of three letter residue types
-    - 'bfactor': numpy array of B-factors
-    - 'insertion': numpy array of insertion codes
-    - 'pdbstring': string of the PDB file content
+        dict: A dictionary containing the following keys:
+            - 'xyz_ca': numpy array of CA atom coordinates.
+            - 'xyz_bb': numpy array of backbone coordinates.
+            - 'xyz_aa': list of numpy arrays of all atom coordinates.
+            - 'chain': numpy array of chain identifiers.
+            - 'resnum': numpy array of residue numbers.
+            - 'res1': numpy array of one-letter residue types.
+            - 'res3': numpy array of three-letter residue types.
+            - 'bfactor': numpy array of B-factors.
+            - 'insertion': numpy array of insertion codes.
+            - 'pdbstring': String of the PDB file content.
     """
     
     pdb_string = Path(pdb).read_text() if Path(pdb[:_MAX_FILE_PATH]).is_file() else pdb
@@ -103,7 +100,7 @@ def read_pdb(
             if not np.all(mask_aa == get_standard_atom_mask(res3)):
                 mask_aa != get_standard_atom_mask(res3)
                 missings = np.array(resname_to_atom14names[res3])[mask_aa != get_standard_atom_mask(res3)]
-                if sidechain_warning:
+                if sidechain_warnings:
                     sys.stderr.write(f"Warning: Missing sidechain atoms in residue {res3} {chain_id}{resnum}, missing={missings}\n")
             bfactor.append(bfac)
             occupancy.append(occu)
@@ -142,27 +139,49 @@ def check_xyz_model_type(xyz: np.ndarray) -> str:
 
 
 def write_pdb(
-        xyz: np.ndarray=None,
-        xyz_bb: np.ndarray=None,
-        xyz_aa: np.ndarray=None,
-        mask_aa: np.ndarray=None,
-        res3: np.ndarray=None,
-        resnum: np.ndarray=None,
-        chain: np.ndarray=None,
-        occupancy: np.ndarray=None,
-        bfactor: np.ndarray=None,
-        default_resname: str='XXX',
-        default_chain: str='A',
-        default_occupancy: float=1.0,
-        default_bfactor: float=0.0,
-        default_insertion: str=' ',
-        renumber: bool=False,
-        pdb_file: str=None,
-        model_type: str=None,
+        xyz: np.ndarray = None,
+        xyz_bb: np.ndarray = None,
+        xyz_aa: np.ndarray = None,
+        mask_aa: np.ndarray = None,
+        res3: np.ndarray = None,
+        resnum: np.ndarray = None,
+        chain: np.ndarray = None,
+        occupancy: np.ndarray = None,
+        bfactor: np.ndarray = None,
+        default_resname: str = 'XXX',
+        default_chain: str = 'A',
+        default_occupancy: float = 1.0,
+        default_bfactor: float = 0.0,
+        default_insertion: str = ' ',
+        renumber: bool = False,
+        pdb_file: str = None,
+        model_type: str = None,
         **kwargs,
         ) -> str:
     """
-    Write a PDB format string from the given parameters.
+    Writes a PDB format string from the given parameters.
+
+    Args:
+        xyz (np.ndarray, optional): 3D array of atomic coordinates.
+        xyz_bb (np.ndarray, optional): Backbone atomic coordinates.
+        xyz_aa (np.ndarray, optional): All-atom coordinates.
+        mask_aa (np.ndarray, optional): Mask for all-atom coordinates.
+        res3 (np.ndarray, optional): Three-letter residue names.
+        resnum (np.ndarray, optional): Residue numbers.
+        chain (np.ndarray, optional): Chain identifiers.
+        occupancy (np.ndarray, optional): Atomic occupancy values.
+        bfactor (np.ndarray, optional): Atomic B-factor values.
+        default_resname (str): Default residue name. Default is 'XXX'.
+        default_chain (str): Default chain identifier. Default is 'A'.
+        default_occupancy (float): Default occupancy value. Default is 1.0.
+        default_bfactor (float): Default B-factor value. Default is 0.0.
+        default_insertion (str): Default insertion code. Default is ' '.
+        renumber (bool): Whether to renumber residues for each chain. Default is False.
+        pdb_file (str, optional): Path to save the PDB file. Default is None.
+        model_type (str, optional): Model type ('aa' for all-atom, 'bb' for backbone). Default is None.
+
+    Returns:
+        str: PDB format string.
     """
     assert (xyz is not None) or (xyz_bb is not None) or (xyz_aa is not None), "either xyz, xyz_aa or xyz_bb must be provided"
     if xyz is None:
