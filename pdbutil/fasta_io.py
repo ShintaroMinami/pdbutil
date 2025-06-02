@@ -2,33 +2,53 @@ from pathlib import Path
 from Bio import SeqIO
 import dataclasses
 
-
-@dataclasses.dataclass(frozen=True)
-class FastaSequence:
+@dataclasses.dataclass()
+class FastaRecord:
     """
-    A dataclass to represent a record in a FASTA file.
+    A dataclass to represent a single entry in a FASTA file.
     
     Attributes:
         defline (str): The definition line of the sequence.
         sequence (str): The nucleotide or protein sequence.
     """
-    defline: list[str]
-    sequence: list[str]
+    defline: str
+    sequence: str
+
+
+@dataclasses.dataclass()
+class FastaRecords:
+    entries: list[FastaRecord]
+
+    def __post_init__(self):
+        self.sequences = self.sequences()
+        self.deflines = self.deflines()
 
     def __iter__(self):
         """
-        Returns an iterator over the defline and sequence.
+        Returns an iterator over the entries in the FASTA sequences.
         """
-        return iter((self.defline, self.sequence))
-
+        return iter(self.entries)
+    
     def __len__(self):
         """
-        Returns the number of sequences.
+        Returns the number of entries in the FASTA sequences.
         """
-        return len(self.sequence)
+        return len(self.entries)
+
+    def sequences(self):
+        """
+        Returns a list of sequences from the FASTA entries.
+        """
+        return [entry.sequence for entry in self.entries]
+    
+    def deflines(self):
+        """
+        Returns a list of deflines from the FASTA entries.
+        """
+        return [entry.defline for entry in self.entries]
 
 
-def read_fasta(file_path: str) -> FastaSequence:
+def read_fasta(file_path: str) -> FastaRecords:
     """
     Reads a .fasta file and returns a list of sequences.
 
@@ -41,13 +61,12 @@ def read_fasta(file_path: str) -> FastaSequence:
     """
     if not Path(file_path).exists():
         raise FileNotFoundError(f"The file {file_path} does not exist.")
-    deflines, sequences = [], []
+    data_list = []
     try:
         with open(file_path, "r") as fasta_file:
             for record in SeqIO.parse(fasta_file, "fasta"):
-                deflines.append(str(record.id))
-                sequences.append(str(record.seq))
+                data_list.append(FastaRecord(defline=str(record.id), sequence=str(record.seq)))
     except Exception as e:
         print(f"Error reading FASTA file: {e}")
-    return FastaSequence(defline=deflines, sequence=sequences)
+    return FastaRecords(entries=data_list)
 
