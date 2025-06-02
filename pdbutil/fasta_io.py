@@ -20,8 +20,8 @@ class FastaRecords:
     entries: list[FastaRecord]
 
     def __post_init__(self):
-        self.sequences = self.sequences()
-        self.deflines = self.deflines()
+        self.sequences = self._sequences()
+        self.deflines = self._deflines()
 
     def __iter__(self):
         """
@@ -35,13 +35,13 @@ class FastaRecords:
         """
         return len(self.entries)
 
-    def sequences(self):
+    def _sequences(self):
         """
         Returns a list of sequences from the FASTA entries.
         """
         return [entry.sequence for entry in self.entries]
     
-    def deflines(self):
+    def _deflines(self):
         """
         Returns a list of deflines from the FASTA entries.
         """
