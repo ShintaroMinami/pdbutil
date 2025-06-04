@@ -24,8 +24,6 @@ class TestReadFasta(unittest.TestCase):
 
         fasta = read_fasta(str(test_file))
 
-        print(fasta)
-
         self.assertEqual(len(fasta), 2)
         self.assertEqual(fasta.deflines, ["seq1", "seq2"], "Deflines do not match expected values")
         self.assertEqual(fasta.sequences, ["SEQUENCEONE", "SEQUENCETWO"], "Sequences do not match expected values")
