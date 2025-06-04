@@ -20,11 +20,13 @@ data_dict = read_pdb('pdb_file_path.pdb')
 data_dict: {
     'xyz_ca':    np.array [L, 3],    # C-alpha coordinates
     'xyz_bb':    np.array [L, 4, 3], # Backbone coordinates
-    'xyz_aa':    list [L, np.array], # All-atom coordinates
+    'xyz_aa':    np.array [L,14, 3], # All-atom coordinates
+    'mask_aa':   np.array [L,14],    # Boolian array to address existing (=True) atoms
     'chain':     np.array [L,],      # Chain ID
     'resnum':    np.array [L,],      # Residue number
     'res1':      np.array [L,],      # One letter AA type
     'res3':      np.array [L,],      # Three letter AA type
+    'occupancy': np.array [L,],      # Occupancy
     'bfactor':   np.array [L,],      # B-factor
     'insertion': np.array [L,],      # Insertion code
     'pdbstring': str,                # PDB format string
@@ -52,8 +54,36 @@ xyz_sup = superpose(xyz_reference, xyz_targets)
 # xyz_ca1.shape -> (L,3), (1,L,3) or (B1,L,3)
 # xyz_ca2.shape -> (L,3), (1,L,3) or (B2,L,3)
 
+# Case of (L, 3) x (L, 3) -> float
+rmsd = calc_rmsd(xyz_ca1, xyz_ca2)
+
+# Case of (B1, L, 3) x (B2, L, 3) -> (B1, B2)
 rmsd_matrix = calc_rmsd(xyz_ca1, xyz_ca2)
-# rmsd_matrix.shape -> (B1, B2)
+```
+
+#### FASTA file Read & Write
+``` python
+## Import functions
+from pdbutil import read_fasta
+
+## Read FASTA file -> fasta object
+fasta = read_fasta('fasta_file_path.fasta')
+
+## Get deflines/sequences
+deflines = fasta.deflines   # list[str], e.g. ['protein1', 'protein2', ...]
+sequences = fasta.sequences # list[str], e.g. ['SEQUENCE1', 'SEQUENCE2', ...]
+
+## Use the object as an Iterator
+for data in fasta:
+    print(data.defline)
+    print(data.sequence)
+
+## To get FASTA format string
+fasta_string = str(fasta)
+
+## To print as FASTA format on STDOUT
+print(fasta)
+
 ```
 
 ## Author

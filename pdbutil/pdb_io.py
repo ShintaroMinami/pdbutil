@@ -42,11 +42,12 @@ def read_pdb(
         dict: A dictionary containing the following keys:
             - 'xyz_ca': numpy array of CA atom coordinates.
             - 'xyz_bb': numpy array of backbone coordinates.
-            - 'xyz_aa': list of numpy arrays of all atom coordinates.
+            - 'xyz_aa': numpy arrays of all atom coordinates.
             - 'chain': numpy array of chain identifiers.
             - 'resnum': numpy array of residue numbers.
             - 'res1': numpy array of one-letter residue types.
             - 'res3': numpy array of three-letter residue types.
+            - 'occupancy': numpy array of occupancy values.
             - 'bfactor': numpy array of B-factors.
             - 'insertion': numpy array of insertion codes.
             - 'pdbstring': String of the PDB file content.
@@ -108,6 +109,7 @@ def read_pdb(
         'xyz_ca': np.stack(xyz_ca),
         'xyz_bb': np.stack(xyz_backbone),
         'xyz_aa': np.stack(xyz_allatom),
+        'mask_aa': np.stack(mask_allatom),
         'chain': np.array(chains),
         'resnum': np.array(resnumber),
         'res1': np.array(residue1),
@@ -115,12 +117,20 @@ def read_pdb(
         'bfactor': np.array(bfactor),
         'occupancy': np.array(occupancy),
         'insertion': np.array(insertion),
-        'mask_aa': np.stack(mask_allatom),
         'pdbstring': pdb_string,
     }
 
 
 def renumbering_for_each_chain(chain: np.ndarray) -> np.ndarray:
+    """
+    Renumbers residues for each chain in the given chain array.
+
+    Args:
+        chain (np.ndarray): Array of chain identifiers.
+
+    Returns:
+        np.ndarray: Array of renumbered residue numbers for each chain.
+    """
     resnum = np.zeros(len(chain), dtype=int)
     for c in np.unique(chain):
         mask = (chain == c).astype(int)
@@ -130,6 +140,18 @@ def renumbering_for_each_chain(chain: np.ndarray) -> np.ndarray:
 
 
 def check_xyz_model_type(xyz: np.ndarray) -> str:
+    """
+    Determines the model type based on the shape of the xyz array.
+
+    Args:
+        xyz (np.ndarray): Array of atomic coordinates.
+
+    Returns:
+        str: Model type ('aa' for all-atom, 'bb' for backbone).
+
+    Raises:
+        ValueError: If the xyz shape is invalid.
+    """
     if xyz.shape[-2] == 14:
         return 'aa'
     elif xyz.shape[-2] == 4:
@@ -182,6 +204,11 @@ def write_pdb(
 
     Returns:
         str: PDB format string.
+
+    Raises:
+        AssertionError: If none of xyz, xyz_bb, or xyz_aa is provided.
+        TypeError: If xyz is not a numpy array.
+        ValueError: If xyz is not a 3D array or if lengths of xyz and other arrays do not match.
     """
     assert (xyz is not None) or (xyz_bb is not None) or (xyz_aa is not None), "either xyz, xyz_aa or xyz_bb must be provided"
     if xyz is None:
