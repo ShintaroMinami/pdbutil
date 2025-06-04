@@ -34,7 +34,7 @@ resname_to_atom14names = {
 }
 
 atom14name_to_index = {
-    resname: {atom:i for i, atom in enumerate(resname_to_atom14names[resname]) if atom is not ''} for resname in resname_to_atom14names.keys()
+    resname: {atom:i for i, atom in enumerate(resname_to_atom14names[resname]) if atom != ''} for resname in resname_to_atom14names.keys()
 }
 
 
