@@ -1,6 +1,5 @@
 */__pycache__
 */.mypy*
-tests/integration_tests/*/log.*
 dist
 build
 *.egg-info
