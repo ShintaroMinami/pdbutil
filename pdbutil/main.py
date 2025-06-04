@@ -1,11 +1,23 @@
-
 def pdb_rmsd():
     """
     Command line interface for calculating RMSD.
+
+    This function calculates the Root Mean Square Deviation (RMSD) between two sets of PDB files.
+
+    Args:
+        pdb1 (List[str]): First group of PDB files.
+        pdb2 (Optional[List[str]]): Second group of PDB files. If not provided, the first group is used.
+        csv (bool): Flag to output results in CSV format.
+
+    Raises:
+        ValueError: If the number of CA atoms in the PDB files is inconsistent.
+
+    Returns:
+        None
     """
     from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
     parser = ArgumentParser(description='Calculate RMSD between two PDB files.', formatter_class=ArgumentDefaultsHelpFormatter)
-    parser.add_argument('pdb1', type=str, nargs='+', help='First groupd of PDB files.')
+    parser.add_argument('pdb1', type=str, nargs='+', help='First group of PDB files.')
     parser.add_argument('--pdb2', type=str, nargs='+', help='Second group of PDB files.')
     parser.add_argument('--csv', action='store_true', help='Output in CSV format.')
     args = parser.parse_args()
@@ -13,7 +25,7 @@ def pdb_rmsd():
     import numpy as np
     from pdbutil.pdb_io import read_pdb    
     from pdbutil.rmsd import calc_rmsd
-    
+
     xyz1, file1 = [read_pdb(f)['xyz_ca'] for f in args.pdb1], args.pdb1
 
     if not np.all(np.array([len(x) == len(xyz1[0]) for x in xyz1], dtype=bool)):
@@ -41,6 +53,19 @@ def pdb_rmsd():
 def pdb_superpose():
     """
     Command line interface for superposing PDB structures onto a reference.
+
+    This function superposes PDB structures onto a reference structure and writes the superposed structures to files.
+
+    Args:
+        pdbs (List[str]): Target PDB files.
+        reference (Optional[str]): Reference PDB file. If not provided, the first PDB file is used as the reference.
+        output_dir (str): Directory to save the superposed PDB files.
+
+    Raises:
+        ValueError: If the number of backbone atoms in the PDB files is inconsistent.
+
+    Returns:
+        None
     """
     from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
     parser = ArgumentParser(description='Superpose two PDB files.', formatter_class=ArgumentDefaultsHelpFormatter)
@@ -53,14 +78,14 @@ def pdb_superpose():
     import numpy as np
     from pdbutil.pdb_io import read_pdb, write_pdb
     from pdbutil.rmsd import superpose
-    
+
     datadicts, names = [read_pdb(f) for f in args.pdbs], [str(Path(f).stem) for f in args.pdbs]
-    
+
     xyz_ref = datadicts[0]['xyz_bb'] if args.reference is None else read_pdb(args.reference)['xyz_bb']
 
     if not np.all(np.array([len(d['xyz_bb']) == len(xyz_ref) for d in datadicts], dtype=bool)):
         raise ValueError("All input PDB files must have the same number of CA atoms.")
-    
+
     xyz_trg = np.stack([d['xyz_bb'] for d in datadicts])
     xyz_sup = superpose(xyz_ref, xyz_trg)
 
