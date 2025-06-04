@@ -30,4 +30,4 @@ jobs:
         run: python setup.py install
       
       - name: Run Unit Tests
-        run: python -m unittest discover tests/ --disable-warnings --maxfail=1
+        run: python -m unittest discover tests
