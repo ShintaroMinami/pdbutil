@@ -222,7 +222,7 @@ def write_pdb(
         raise ValueError(f"xyz should be a 3D array, got {xyz.ndim}D")
     res3 = np.full((xyz.shape[0],), default_resname) if res3 is None else res3
     chain = np.full((xyz.shape[0],), default_chain) if chain is None else chain
-    bfactor = np.full((xyz.shape[0],), default_occupancy) if bfactor is None else bfactor
+    occupancy = np.full((xyz.shape[0],), default_occupancy) if occupancy is None else occupancy
     bfactor = np.full((xyz.shape[0],), default_bfactor) if bfactor is None else bfactor
     resnum = renumbering_for_each_chain(chain) if (resnum is None) or renumber else resnum
     if xyz.shape[0] != res3.shape[0]:
@@ -231,8 +231,8 @@ def write_pdb(
         raise ValueError(f"xyz and resnum must have the same length, got {xyz.shape[0]} and {resnum.shape[0]}")
     if xyz.shape[0] != chain.shape[0]:
         raise ValueError(f"xyz and chain must have the same length, got {xyz.shape[0]} and {chain.shape[0]}")
-    if xyz.shape[0] != bfactor.shape[0]:
-        raise ValueError(f"xyz and bfactor must have the same length, got {xyz.shape[0]} and {bfactor.shape[0]}")
+    if xyz.shape[0] != occupancy.shape[0]:
+        raise ValueError(f"xyz and occupancy must have the same length, got {xyz.shape[0]} and {occupancy.shape[0]}")
     if model_type == 'aa':
         mask_atoms = [get_standard_atom_mask(r3) for r3 in res3] if mask_aa is None else mask_aa
     else:
