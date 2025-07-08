@@ -89,7 +89,7 @@ def read_pdb(
                 if atom.name in bb_atoms_dict:
                     xyz_bb[bb_atoms_dict[atom_name]] = xyz
                 if not atom_name in atom14name_to_index[res3]:
-                    sys.stderr.write(f"Warning: Atom {atom_name} in residue {res3} is not in the standard atom14 list.\n")
+                    sys.stderr.write(f"Warning: Atom {atom_name} in residue {res3} {chain_id}{resnum} is not in the standard atom14 list.\n")
                     continue
                 xyz_aa[atom14name_to_index[res3][atom_name]] = xyz
                 mask_aa[atom14name_to_index[res3][atom_name]] = True
