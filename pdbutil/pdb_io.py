@@ -26,6 +26,7 @@ def read_pdb(
         pdb: str,
         model_num: int = 0,
         sidechain_warnings: bool = True,
+        verbose: bool = False,
         bb_atoms_dict: Dict = BB_ATOMS_TO_INDEX
         ) -> dict:
     """
@@ -93,7 +94,8 @@ def read_pdb(
                 xyz_aa[atom14name_to_index[res3][atom_name]] = xyz
                 mask_aa[atom14name_to_index[res3][atom_name]] = True
             if any([xyz is None for xyz in xyz_bb]):
-                sys.stderr.write(f"Warning: Missing backbone atom in residue {res3} {chain_id}{resnum} and skipped\n")
+                if verbose:
+                    sys.stderr.write(f"Warning: Missing backbone atom in residue {res3} {chain_id}{resnum} and skipped\n")
                 continue
             xyz_backbone.append(np.stack(xyz_bb))
             xyz_allatom.append(np.stack(xyz_aa))
