@@ -25,7 +25,7 @@ _parser= PDBParser(QUIET=True)
 def read_pdb(
         pdb: str,
         model_num: int = 0,
-        sidechain_warnings: bool = True,
+        backbone_warnings: bool = True,
         verbose: bool = False,
         bb_atoms_dict: Dict = BB_ATOMS_TO_INDEX
         ) -> dict:
@@ -90,12 +90,13 @@ def read_pdb(
                 if atom.name in bb_atoms_dict:
                     xyz_bb[bb_atoms_dict[atom_name]] = xyz
                 if not atom_name in atom14name_to_index[res3]:
-                    sys.stderr.write(f"Warning: Atom {atom_name} in residue {res3} {chain_id}{resnum} is not in the standard atom14 list.\n")
+                    if verbose:
+                        sys.stderr.write(f"Warning: Atom {atom_name} in residue {res3} {chain_id}{resnum} is not in the standard atom14 list.\n")
                     continue
                 xyz_aa[atom14name_to_index[res3][atom_name]] = xyz
                 mask_aa[atom14name_to_index[res3][atom_name]] = True
             if any([xyz is None for xyz in xyz_bb]):
-                if verbose:
+                if backbone_warnings:
                     sys.stderr.write(f"Warning: Missing backbone atom in residue {res3} {chain_id}{resnum} and skipped\n")
                 continue
             xyz_backbone.append(np.stack(xyz_bb))
@@ -104,7 +105,7 @@ def read_pdb(
             if not np.all(mask_aa == get_standard_atom_mask(res3)):
                 mask_aa != get_standard_atom_mask(res3)
                 missings = np.array(resname_to_atom14names[res3])[mask_aa != get_standard_atom_mask(res3)]
-                if sidechain_warnings:
+                if verbose:
                     sys.stderr.write(f"Warning: Missing sidechain atoms in residue {res3} {chain_id}{resnum}, missing={missings}\n")
             bfactor.append(bfac)
             occupancy.append(occu)
